@@ -33,7 +33,19 @@ public class LoginFrame extends JFrame implements ActionListener
 	 */
 	public void actionPerformed(ActionEvent e)
 	{
+		// Get data from fields
 		
+		ChatSession s = new ChatSession(host, username, password);
+		if (s.getStatus() != ChatSession.Status.DISCONNECTED)
+		{
+			// Session failed
+		}
+		else
+		{
+			ClientFrame client = new ClientFrame(s);
+			s.addChatSessionListener(client);
+			dispose();
+		}
 	}
 	
 	public static void main(String[] args)
