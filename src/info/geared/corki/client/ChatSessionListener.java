@@ -1,4 +1,4 @@
-package info.geared.corki;
+package info.geared.corki.client;
 
 public interface ChatSessionListener
 {

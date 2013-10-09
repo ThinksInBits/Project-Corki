@@ -1,4 +1,6 @@
-package info.geared.corki;
+package info.geared.corki.client;
+
+import info.geared.corki.net.Sender;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,7 +35,7 @@ public class ChatSession implements Runnable
 	protected Status status;
 	protected boolean isClosed;
 
-	ChatSession(String host, String username, String password)
+	public ChatSession(String host, String username, String password)
 	{
 		status = Status.NOT_INI;
 		isClosed = true;

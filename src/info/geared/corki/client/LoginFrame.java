@@ -1,4 +1,4 @@
-package info.geared.corki;
+package info.geared.corki.client;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

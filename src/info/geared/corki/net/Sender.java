@@ -1,4 +1,4 @@
-package info.geared.corki;
+package info.geared.corki.net;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -9,7 +9,7 @@ public class Sender implements Runnable
 	protected String message;
 	protected Thread thread;
 	
-	Sender(OutputStream out)
+	public Sender(OutputStream out)
 	{
 		thread = new Thread(this);
 		this.out = new PrintStream(out);
