@@ -1,6 +1,6 @@
 package info.geared.corki;
 
-public interface SessionUpdate
+public interface ChatSessionListener
 {
 	void updateUserList();
 	void updateChat();
