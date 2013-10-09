@@ -29,20 +29,11 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 		
 	}
 
-	/** This method is called by the session when a user enters or leaves
-	 * the room. It will get the updated user list from the session and
-	 * then update the UI.
-	 */
-	public void updateUserList()
-	{
-		
-	}
-
 	/** This method is called by the session when there is a new chat
 	 * message has been received. It will in turn get the new message(s)
 	 * from the session and put them into the history TextArea.
 	 */
-	public void updateChat()
+	public void update(String msg)
 	{
 		
 	}
