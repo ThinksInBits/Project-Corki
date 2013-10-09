@@ -2,6 +2,5 @@ package info.geared.corki;
 
 public interface ChatSessionListener
 {
-	void updateUserList();
-	void updateChat();
+	void update(String msg);
 }
