@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -19,8 +20,8 @@ public class ChatSession implements Runnable
 		DISCONNECTED, CONNECTED, UNKNOWN_HOST, IO_EXCEPTION, NO_MD5, NO_UTF8, NOT_INI, NAME_TAKEN
 	}
 
-	protected static final int DEFAULT_PORT = 73195;
-	protected static final int TIMEOUT = 3000;
+	protected static final int DEFAULT_PORT = 37195;
+	protected static final int TIMEOUT = 2000;
 
 	protected String hostname;
 	protected String username;
@@ -30,7 +31,7 @@ public class ChatSession implements Runnable
 	protected ArrayList<ChatSessionListener> listeners;
 	protected Sender sender;
 	protected Socket socket;
-	protected Thread thread;
+	protected Thread receivingThread;
 
 	protected Status status;
 	protected boolean isClosed;
@@ -39,7 +40,7 @@ public class ChatSession implements Runnable
 	{
 		status = Status.NOT_INI;
 		isClosed = true;
-		thread = new Thread(this);
+		receivingThread = new Thread(this);
 		
 		if (host.contains(":"))
 		{
@@ -117,25 +118,35 @@ public class ChatSession implements Runnable
 			return false;
 		
 		/* Check if the main receiving thread is already running. */
-		if (thread.isAlive())
+		if (receivingThread.isAlive())
 			return false;
 		else
-			thread.start();
+		{
+			isClosed = false;
+			receivingThread.start();
+		}
+		
+		/* Start the sender service. */
+		sender.start();
 		
 		/* Try to send connect command to server. */
 		if (!sender.send("CONNECT:"+username))
 			return false;
 		
-		isClosed = false;
 		status = Status.CONNECTED;
 		return true;
 	}
 	
 	public void close()
 	{
+		/* First check if the Session is even open. */
+		if (status == Status.DISCONNECTED || isClosed == true)
+			return;
+		
 		sender.send("DISCONNECT");
 		isClosed = true;
 		status = Status.DISCONNECTED;
+		sender.stop();
 	}
 	
 	public void addChatSessionListener(ChatSessionListener csl)
@@ -156,12 +167,20 @@ public class ChatSession implements Runnable
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			while (isClosed == false)
 			{
-				/* Try to read a line from the socket. */
-				String line = in.readLine();
-				
-				/* If the read timedout then line will be empty or null. */
-				if (line == null || line.isEmpty())
+				String line;
+				try
+				{
+					/* Try to read a line from the socket. */
+					line = in.readLine();
+				}
+				/* The read timed out. Check if the session is still open, and try to read
+				 * again if it is.
+				 */
+				catch(SocketTimeoutException e)
+				{
+					System.out.println("Socket timed out. Read again if the session is still open.");
 					continue;
+				}
 				
 				/* When a line is read update the listeners. */
 				for(ChatSessionListener listener : listeners)
@@ -169,6 +188,7 @@ public class ChatSession implements Runnable
 					listener.update(line);
 				}
 			}
+			socket.close();
 		}
 		catch (IOException e)
 		{
