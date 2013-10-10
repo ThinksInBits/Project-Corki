@@ -19,6 +19,7 @@ public class Sender
 
 		public void run()
 		{
+			/* !!!!OJOIH!OHN! THIS IS NOT SAFE!!! !OIJEOI!EJO */
 			out.println(message);
 		}
 		
