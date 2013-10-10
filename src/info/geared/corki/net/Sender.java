@@ -32,9 +32,9 @@ public class Sender
 	protected PrintStream out;
 	protected ExecutorService executor;
 	
-	public Sender(OutputStream out)
+	public Sender(PrintStream out)
 	{
-		this.out = new PrintStream(out);
+		this.out = out;
 	}
 	
 	public void start()
