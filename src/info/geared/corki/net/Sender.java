@@ -35,7 +35,12 @@ public class Sender
 	
 	public Sender()
 	{
-		executor = Executors.newFixedThreadPool(POOL_SIZE);
+
+	}
+	
+	public void start()
+	{
+		executor = Executors.newFixedThreadPool(3);
 	}
 	
 	public void stop()

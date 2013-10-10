@@ -69,7 +69,7 @@ public class ChatServer implements ClientListener, Runnable
 		/* Call disconnect on each client. While will cause their threads to end */
 		for (Client c : clients)
 		{
-			c.disconnect();
+			c.stop();
 		}
 
 		/* Shutdown the client thread pool. */
@@ -128,7 +128,7 @@ public class ChatServer implements ClientListener, Runnable
 		}
 	}
 
-	public void receiveMessage(String message, String name)
+	public void receiveMessage(String message, Client name)
 	{
 		// TODO Auto-generated method stub
 	}
