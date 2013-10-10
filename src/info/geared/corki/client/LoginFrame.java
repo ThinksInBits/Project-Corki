@@ -49,15 +49,26 @@ public class LoginFrame extends JFrame implements ActionListener
 	}
 
 	public static void main(String[] args) throws InterruptedException
-	{
-		ChatSession s = new ChatSession("localhost", "david", "");
-		s.open();
-		System.out.println("Session opened...");
-		Thread.sleep(5000);
-		s.send("Hi I'm a banana");
-		s.send("Ohh boy!");
-		s.send("WHAT THE FUCKKKK!");
-		s.close();
+	{	
+		ChatSession s = new ChatSession("localhost:37195", "david", "");;
+		try
+		{
+			if (!s.open())
+			{
+				System.out.println("The Chat session could not be opened!");
+			}
+			else
+			{
+				Thread.sleep(5000);
+				s.send("Hi I'm a banana");
+				s.send("Ohh boy!");
+				s.send("WHAT THE FUCKKKK!");
+			}
+		}
+		finally
+		{
+			s.close();
+		}
 	}
 
 }
