@@ -16,6 +16,8 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 	
 	/* All JComponents fields here. */
 
+	
+
 	ClientFrame(ChatSession session)
 	{
 		buildUI();
@@ -60,11 +62,13 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 	/* Do nothing. */
 	public void keyReleased(KeyEvent e)
 	{
+		
 	}
 
 	/* Do nothing. */
 	public void keyTyped(KeyEvent e)
 	{
+		
 	}
 
 }
