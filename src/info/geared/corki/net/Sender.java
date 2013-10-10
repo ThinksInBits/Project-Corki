@@ -16,11 +16,15 @@ public class Sender
 		{
 			this.message = message;
 		}
+		
+		protected synchronized void send()
+		{
+			out.println(message);
+		}
 
 		public void run()
 		{
-			/* !!!!OJOIH!OHN! THIS IS NOT SAFE!!! !OIJEOI!EJO */
-			out.println(message);
+			send();
 		}
 		
 	}
