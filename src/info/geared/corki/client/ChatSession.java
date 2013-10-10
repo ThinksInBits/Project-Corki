@@ -5,6 +5,7 @@ import info.geared.corki.net.Sender;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -30,6 +31,7 @@ public class ChatSession implements Runnable
 
 	protected ArrayList<ChatSessionListener> listeners;
 	protected Sender sender;
+	protected PrintStream outStream;
 	protected Socket socket;
 	protected Thread receivingThread;
 
@@ -77,7 +79,6 @@ public class ChatSession implements Runnable
 		{
 			socket = new Socket(hostname, port);
 			socket.setSoTimeout(TIMEOUT);
-			sender = new Sender(socket.getOutputStream());
 		}
 		catch (UnknownHostException e)
 		{
@@ -103,7 +104,7 @@ public class ChatSession implements Runnable
 	
 	public boolean send(String message)
 	{
-		return sender.send(message);
+		return sender.send(message, outStream);
 	}
 	
 	public boolean open()
@@ -127,10 +128,10 @@ public class ChatSession implements Runnable
 		}
 		
 		/* Start the sender service. */
-		sender.start();
+		sender = new Sender();
 		
 		/* Try to send connect command to server. */
-		if (!sender.send("CONNECT:"+username))
+		if (!sender.send("CONNECT:"+username, outStream))
 			return false;
 		
 		status = Status.CONNECTED;
@@ -143,7 +144,7 @@ public class ChatSession implements Runnable
 		if (status == Status.DISCONNECTED || isClosed == true)
 			return;
 		
-		sender.send("DISCONNECT");
+		sender.send("DISCONNECT", outStream);
 		isClosed = true;
 		status = Status.DISCONNECTED;
 		sender.stop();
