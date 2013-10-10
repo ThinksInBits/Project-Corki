@@ -2,36 +2,53 @@ package info.geared.corki.net;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class Sender implements Runnable
+public class Sender
 {
+	
+	protected class SenderWorker implements Runnable
+	{
+		private String message;
+		
+		public SenderWorker(String message)
+		{
+			this.message = message;
+		}
+
+		public void run()
+		{
+			out.println(message);
+		}
+		
+	}
+	
 	protected PrintStream out;
-	protected String message;
-	protected Thread thread;
+	protected ExecutorService executor;
 	
 	public Sender(OutputStream out)
 	{
-		thread = new Thread(this);
 		this.out = new PrintStream(out);
-		message = "";
 	}
 	
-	public void run()
+	public void start()
 	{
-		out.println(message);
-		message = "";
+		executor = Executors.newFixedThreadPool(3);
+	}
+	
+	public void stop()
+	{
+		executor.shutdown();
 	}
 	
 	public boolean send(String message)
 	{
-		this.message = message;
 		if (message.isEmpty())
 			return false;
 		
-		if (thread.isAlive())
-			return false;
-		
-		thread.start();
+		Runnable worker = new SenderWorker(message);
+		executor.execute(worker);
 		return true;
 	}
 }
