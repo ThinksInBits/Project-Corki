@@ -31,6 +31,7 @@ public class Sender
 	
 	protected PrintStream out;
 	protected ExecutorService executor;
+	protected static final int POOL_SIZE = 3;
 	
 	public Sender(OutputStream out)
 	{
@@ -39,7 +40,7 @@ public class Sender
 	
 	public void start()
 	{
-		executor = Executors.newFixedThreadPool(3);
+		executor = Executors.newFixedThreadPool(POOL_SIZE);
 	}
 	
 	public void stop()
