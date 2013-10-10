@@ -82,13 +82,13 @@ public class ChatSession implements Runnable
 		}
 		catch (UnknownHostException e)
 		{
-			e.printStackTrace();
+			//e.printStackTrace();
 			status = Status.UNKNOWN_HOST;
 			return;
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			//e.printStackTrace();
 			status = Status.IO_EXCEPTION;
 			return;
 		}
