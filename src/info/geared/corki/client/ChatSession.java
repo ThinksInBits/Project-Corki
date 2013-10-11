@@ -104,7 +104,7 @@ public class ChatSession implements Runnable
 	
 	public boolean send(String message)
 	{
-		return sender.send(message, outStream);
+		return sender.send("MSG:"+message, outStream);
 	}
 	
 	public boolean open()
@@ -127,12 +127,27 @@ public class ChatSession implements Runnable
 			receivingThread.start();
 		}
 		
+		/* Create our output stream for the socket. */
+		try
+		{
+			outStream = new PrintStream(socket.getOutputStream());
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			isClosed = true;
+			return false;
+		}
+		
 		/* Start the sender service. */
 		sender = new Sender();
 		
 		/* Try to send connect command to server. */
-		if (!sender.send("CONNECT:"+username, outStream))
+		if (!sender.send("CON:"+username, outStream))
+		{
+			isClosed = true;
 			return false;
+		}
 		
 		status = Status.CONNECTED;
 		return true;
