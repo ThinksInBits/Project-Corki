@@ -31,27 +31,38 @@ public class Sender
 	}
 
 	protected ExecutorService executor;
+	protected boolean running;
 	protected static final int POOL_SIZE = 3;
 
 	public Sender()
 	{
-		
+		running = false;
 	}
 
 	public void start()
 	{
+		if (running == true)
+			return;
 		executor = Executors.newFixedThreadPool(3);
+		running = true;
 	}
 
 	public void stop()
 	{
 		if (!executor.isShutdown())
 		executor.shutdown();
+		running = false;
 	}
 
 	public boolean send(String message, PrintStream out)
 	{
+		if (running == false)
+			return false;
+		
 		if (message.isEmpty())
+			return false;
+		
+		if (out.checkError())
 			return false;
 		
 		executor.execute(new SenderWorker(message, out));
