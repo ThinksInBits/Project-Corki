@@ -43,6 +43,7 @@ public class ChatSession implements Runnable
 		status = Status.NOT_INI;
 		isClosed = true;
 		receivingThread = new Thread(this);
+		listeners = new ArrayList<ChatSessionListener>();
 		
 		if (host.contains(":"))
 		{
@@ -160,7 +161,7 @@ public class ChatSession implements Runnable
 		if (status == Status.DISCONNECTED || isClosed == true)
 			return;
 		
-		sender.send("DISCONNECT", outStream);
+		sender.send("DIS:", outStream);
 		isClosed = true;
 		status = Status.DISCONNECTED;
 		sender.stop();
@@ -184,11 +185,33 @@ public class ChatSession implements Runnable
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			while (isClosed == false)
 			{
+				if (socket.isClosed())
+				{
+					isClosed = true;					
+					break;
+				}
 				String line;
 				try
 				{
 					/* Try to read a line from the socket. */
 					line = in.readLine();
+					
+					System.out.println("RECEIVED: "+line);
+					
+					/* When a line is read update the listeners. */
+					if (isClosed == false)
+					{
+						System.out.println(listeners.size() + " listeners");
+						for(ChatSessionListener listener : listeners)
+						{
+							/* If the listener no longer exists, then remove it. */
+							if (listener == null)
+							{
+								listeners.remove(listener);
+							}
+							listener.update(line);
+						}
+					}
 				}
 				/* The read timed out. Check if the session is still open, and try to read
 				 * again if it is.
@@ -198,18 +221,13 @@ public class ChatSession implements Runnable
 					System.out.println("Socket timed out. Read again if the session is still open.");
 					continue;
 				}
-				
-				/* When a line is read update the listeners. */
-				for(ChatSessionListener listener : listeners)
-				{
-					listener.update(line);
-				}
 			}
 			socket.close();
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
+			isClosed = true;
 		}
 	}
 	
