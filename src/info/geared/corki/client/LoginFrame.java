@@ -63,8 +63,11 @@ public class LoginFrame extends JFrame implements ActionListener
 				Thread.sleep(5000);
 				System.out.println("Sending messages.");
 				s.send("Hi I'm a banana");
+				Thread.sleep(50);
 				s.send("Ohh boy!");
+				Thread.sleep(50);
 				s.send("WHAT THE FUCKKKK!");
+				Thread.sleep(50);
 			}
 		}
 		finally
