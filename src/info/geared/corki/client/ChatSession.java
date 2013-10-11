@@ -141,6 +141,7 @@ public class ChatSession implements Runnable
 		
 		/* Start the sender service. */
 		sender = new Sender();
+		sender.start();
 		
 		/* Try to send connect command to server. */
 		if (!sender.send("CON:"+username, outStream))

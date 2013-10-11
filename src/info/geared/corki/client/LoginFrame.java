@@ -59,7 +59,9 @@ public class LoginFrame extends JFrame implements ActionListener
 			}
 			else
 			{
+				System.out.println("Session opened.");
 				Thread.sleep(5000);
+				System.out.println("Sending messages.");
 				s.send("Hi I'm a banana");
 				s.send("Ohh boy!");
 				s.send("WHAT THE FUCKKKK!");

@@ -45,6 +45,7 @@ public class Sender
 
 	public void stop()
 	{
+		if (!executor.isShutdown())
 		executor.shutdown();
 	}
 
