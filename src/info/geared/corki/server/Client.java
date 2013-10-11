@@ -31,6 +31,7 @@ public class Client
 				String line;
 				try
 				{
+					System.out.println("Listening for client");
 					line = in.readLine();
 					listener.receiveMessage(line, client);
 				}
@@ -63,6 +64,7 @@ public class Client
 	{
 		running = false;
 		this.socket = socket;
+		name = "";
 	}
 	
 	public boolean start(ExecutorService executor, ClientListener listener)
@@ -118,5 +120,15 @@ public class Client
 	public void send(String message, Sender sender)
 	{
 		sender.send(message, out);
+	}
+	
+	public String getName()
+	{
+		return name;
+	}
+	
+	public void setName(String name)
+	{
+		this.name = name;
 	}
 }
