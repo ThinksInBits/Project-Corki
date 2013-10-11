@@ -2,6 +2,7 @@ package info.geared.corki.server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
@@ -112,8 +113,13 @@ public class ChatServer implements ClientListener, Runnable
 			try
 			{
 				System.out.println("Waiting for a connection...");
-				serverSocket.accept();
+				Socket soc = serverSocket.accept();
 				
+				Client client = new Client(soc);
+				client.start(executor, this);
+				clients.add(client);
+				
+				System.out.println("Connection received!");				
 			}
 			catch(SocketTimeoutException e)
 			{
@@ -128,9 +134,17 @@ public class ChatServer implements ClientListener, Runnable
 		}
 	}
 
-	public void receiveMessage(String message, Client name)
+	public void receiveMessage(String message, Client client)
 	{
-		// TODO Auto-generated method stub
+		if (message.startsWith("CON:"))
+		{
+			client.setName(message.substring(4));
+			System.out.println(client.getName() +" connected.");
+		}
+		else if (message.startsWith("MSG:"))
+		{
+			System.out.println(client.getName() + ": " + message.substring(4));
+		}
 	}
 
 	public static void main(String args[]) throws InterruptedException
