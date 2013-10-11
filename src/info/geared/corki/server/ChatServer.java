@@ -1,5 +1,7 @@
 package info.geared.corki.server;
 
+import info.geared.corki.net.Sender;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,7 +19,8 @@ public class ChatServer implements ClientListener, Runnable
 	protected int serverPort;
 	protected boolean running;
 	protected Thread connectionThread;
-	
+	protected Sender sender;
+
 	protected static final int SERVER_SOCKET_TIMEOUT = 3000;
 	protected static final int DEFAULT_PORT = 37195;
 
@@ -26,18 +29,23 @@ public class ChatServer implements ClientListener, Runnable
 		running = false;
 		clients = new ArrayList<Client>();
 		serverPort = DEFAULT_PORT;
+		sender = new Sender();
 	}
-	
+
 	public ChatServer(int serverPort)
 	{
 		running = false;
 		clients = new ArrayList<Client>();
 		this.serverPort = serverPort;
-		
+		sender = new Sender();
+
 	}
 
 	public boolean start()
-	{		
+	{
+		if (running == true)
+			return false;
+		
 		/* Try to create the server socket. */
 		try
 		{
@@ -50,21 +58,30 @@ public class ChatServer implements ClientListener, Runnable
 			return false;
 		}
 		
+		/* Start the sender. */
+		sender.start();
+
 		/* Create thread pool for clients. */
 		executor = Executors.newCachedThreadPool();
-		
+
 		/* Set running to true and start the connection receiver thread. */
 		running = true;
 		connectionThread = new Thread(this);
 		connectionThread.start();
-		
-		/* If there were not problems creating the server socket, then return true. */
+
+		/*
+		 * If there were not problems creating the server socket, then return
+		 * true.
+		 */
 		return true;
 	}
 
 	public boolean stop()
 	{
-		/* Setting running to false will cause the connectionThread to end within SERVER_SOCKET_TIMEOUT. */
+		/*
+		 * Setting running to false will cause the connectionThread to end
+		 * within SERVER_SOCKET_TIMEOUT.
+		 */
 		running = false;
 
 		/* Call disconnect on each client. While will cause their threads to end */
@@ -86,7 +103,7 @@ public class ChatServer implements ClientListener, Runnable
 			e.printStackTrace();
 			return false;
 		}
-		
+
 		/* Try to close the server socket. */
 		try
 		{
@@ -98,52 +115,87 @@ public class ChatServer implements ClientListener, Runnable
 			return false;
 		}
 		
+		sender.stop();
+
 		return true;
 	}
 
 	public void run()
 	{
-		/* Indefinitely accept connections until running is no longer true.
-		 * The condition will be checked when a connection is accepted or when
-		 * the socket times out. So the maximum running time of the thread after
+		/*
+		 * Indefinitely accept connections until running is no longer true. The
+		 * condition will be checked when a connection is accepted or when the
+		 * socket times out. So the maximum running time of the thread after
 		 * running is set to false is SERVER_SOCKET_TIMEOUT ms.
 		 */
 		while (running == true)
 		{
 			try
 			{
-				System.out.println("Waiting for a connection...");
+				System.out.println("Waiting for a connection : " + clients.size() + " clients connected.");
 				Socket soc = serverSocket.accept();
-				
+
 				Client client = new Client(soc);
 				client.start(executor, this);
 				clients.add(client);
-				
-				System.out.println("Connection received!");				
+
+				System.out.println("Connection received!");
 			}
-			catch(SocketTimeoutException e)
+			catch (SocketTimeoutException e)
 			{
-				/* If the socket timed out, check that if running is still true, then accept again. */
+				/*
+				 * If the socket timed out, check that if running is still true,
+				 * then accept again.
+				 */
 				continue;
 			}
-			catch(IOException e)
+			catch (IOException e)
 			{
-				/* This is non-critical, since no Client has been created at this point. */
+				/*
+				 * This is non-critical, since no Client has been created at
+				 * this point.
+				 */
 				e.printStackTrace();
 			}
 		}
 	}
-
+	
+	protected void broadcast(String message)
+	{
+		if (running == false)
+			return;
+		
+		for (Client c : clients)
+		{
+			if (c.isRunning() && c.getName().isEmpty() == false)
+			c.send(message, sender);
+		}
+	}
+	
 	public void receiveMessage(String message, Client client)
 	{
+		if (running == false)
+			return;
+		
 		if (message.startsWith("CON:"))
 		{
 			client.setName(message.substring(4));
-			System.out.println(client.getName() +" connected.");
+			System.out.println(client.getName() + " connected.");
+			broadcast(client.getName() + " connected.");
 		}
 		else if (message.startsWith("MSG:"))
 		{
 			System.out.println(client.getName() + ": " + message.substring(4));
+			
+			/* Send the message to all of the clients. */
+			broadcast("MSG:"+client.getName()+":"+message.substring(4));
+		}
+		else if (message.startsWith("DIS:"))
+		{
+			System.out.println(client.getName() + " disconnected.");
+			clients.remove(client);
+			client.stop();
+			broadcast(client.getName() + " disconnected.");
 		}
 	}
 
