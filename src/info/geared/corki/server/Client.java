@@ -28,10 +28,13 @@ public class Client
 		{
 			while (running == true)
 			{
+				if (socket.isClosed())
+				{
+					listener.receiveMessage("DIS:", client);
+				}
 				String line;
 				try
 				{
-					System.out.println("Listening for client");
 					line = in.readLine();
 					listener.receiveMessage(line, client);
 				}
@@ -41,7 +44,7 @@ public class Client
 				}
 				catch (IOException e)
 				{
-					e.printStackTrace();
+					listener.receiveMessage("DIS:", client);
 				}
 			}
 		}
@@ -56,7 +59,6 @@ public class Client
 	protected BufferedReader in;
 	
 	protected ClientWorker worker;
-	protected Sender sender;
 	
 	protected static final int CLIENT_SOCKET_TIMEOUT = 3000;
 	
@@ -99,6 +101,7 @@ public class Client
 		worker = new ClientWorker(listener, this);
 		executor.execute(worker);
 		
+		running = true;
 		return true;
 	}
 	
@@ -117,8 +120,16 @@ public class Client
 		running = false;
 	}
 	
+	public boolean isRunning()
+	{
+		return running;
+	}
+	
 	public void send(String message, Sender sender)
 	{
+		if (running == false)
+			return;
+		
 		sender.send(message, out);
 	}
 	
