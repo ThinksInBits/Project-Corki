@@ -17,13 +17,13 @@ public class Client
 	{
 		protected ClientListener listener;
 		protected Client client;
-		
+
 		public ClientWorker(ClientListener listener, Client client)
 		{
 			this.listener = listener;
 			this.client = client;
 		}
-			
+
 		public void run()
 		{
 			while (running == true)
@@ -40,7 +40,8 @@ public class Client
 				}
 				catch (SocketTimeoutException e)
 				{
-					continue; // Check if running is still true, and try another read.
+					continue; // Check if running is still true, and try another
+								// read.
 				}
 				catch (IOException e)
 				{
@@ -50,30 +51,30 @@ public class Client
 		}
 
 	}
-	
+
 	protected String name;
 	protected boolean running;
-	
+
 	protected Socket socket;
 	protected PrintStream out;
 	protected BufferedReader in;
-	
+
 	protected ClientWorker worker;
-	
+
 	protected static final int CLIENT_SOCKET_TIMEOUT = 3000;
-	
+
 	public Client(Socket socket)
 	{
 		running = false;
 		this.socket = socket;
 		name = "";
 	}
-	
+
 	public boolean start(ExecutorService executor, ClientListener listener)
 	{
 		if (running == true)
 			return false;
-		
+
 		/* Try to create the input and output streams for the socket. */
 		try
 		{
@@ -85,8 +86,11 @@ public class Client
 			e.printStackTrace();
 			return false;
 		}
-		
-		/* Set the socket timeout so the worker thread will be able to finish when running is false. */
+
+		/*
+		 * Set the socket timeout so the worker thread will be able to finish
+		 * when running is false.
+		 */
 		try
 		{
 			socket.setSoTimeout(CLIENT_SOCKET_TIMEOUT);
@@ -96,15 +100,18 @@ public class Client
 			e.printStackTrace();
 			return false;
 		}
-		
-		/* Create and start the worker thread which will listen for messages from the client. */
+
+		/*
+		 * Create and start the worker thread which will listen for messages
+		 * from the client.
+		 */
 		worker = new ClientWorker(listener, this);
 		executor.execute(worker);
-		
+
 		running = true;
 		return true;
 	}
-	
+
 	public void stop()
 	{
 		if (running == false)
@@ -119,25 +126,25 @@ public class Client
 		}
 		running = false;
 	}
-	
+
 	public boolean isRunning()
 	{
 		return running;
 	}
-	
+
 	public void send(String message, Sender sender)
 	{
 		if (running == false)
 			return;
-		
+
 		sender.send(message, out);
 	}
-	
+
 	public String getName()
 	{
 		return name;
 	}
-	
+
 	public void setName(String name)
 	{
 		this.name = name;

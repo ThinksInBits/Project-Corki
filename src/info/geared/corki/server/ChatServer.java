@@ -5,8 +5,10 @@ import info.geared.corki.net.Sender;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +47,7 @@ public class ChatServer implements ClientListener, Runnable
 	{
 		if (running == true)
 			return false;
-		
+
 		/* Try to create the server socket. */
 		try
 		{
@@ -57,7 +59,7 @@ public class ChatServer implements ClientListener, Runnable
 			e.printStackTrace();
 			return false;
 		}
-		
+
 		/* Start the sender. */
 		sender.start();
 
@@ -78,6 +80,7 @@ public class ChatServer implements ClientListener, Runnable
 
 	public boolean stop()
 	{
+		if (running == false)
 		/*
 		 * Setting running to false will cause the connectionThread to end
 		 * within SERVER_SOCKET_TIMEOUT.
@@ -114,7 +117,7 @@ public class ChatServer implements ClientListener, Runnable
 			e.printStackTrace();
 			return false;
 		}
-		
+
 		sender.stop();
 
 		return true;
@@ -132,7 +135,7 @@ public class ChatServer implements ClientListener, Runnable
 		{
 			try
 			{
-				System.out.println("Waiting for a connection : " + clients.size() + " clients connected.");
+				//System.out.println("Waiting for a connection : " + clients.size() + " clients connected.");
 				Socket soc = serverSocket.accept();
 
 				Client client = new Client(soc);
@@ -149,6 +152,10 @@ public class ChatServer implements ClientListener, Runnable
 				 */
 				continue;
 			}
+			catch (SocketException e)
+			{
+				return;
+			}
 			catch (IOException e)
 			{
 				/*
@@ -159,24 +166,24 @@ public class ChatServer implements ClientListener, Runnable
 			}
 		}
 	}
-	
+
 	protected void broadcast(String message)
 	{
 		if (running == false)
 			return;
-		
+
 		for (Client c : clients)
 		{
 			if (c.isRunning() && c.getName().isEmpty() == false)
-			c.send(message, sender);
+				c.send(message, sender);
 		}
 	}
-	
+
 	public void receiveMessage(String message, Client client)
 	{
 		if (running == false)
 			return;
-		
+
 		if (message.startsWith("CON:"))
 		{
 			client.setName(message.substring(4));
@@ -186,9 +193,9 @@ public class ChatServer implements ClientListener, Runnable
 		else if (message.startsWith("MSG:"))
 		{
 			System.out.println(client.getName() + ": " + message.substring(4));
-			
+
 			/* Send the message to all of the clients. */
-			broadcast("MSG:"+client.getName()+":"+message.substring(4));
+			broadcast("MSG:" + client.getName() + ":" + message.substring(4));
 		}
 		else if (message.startsWith("DIS:"))
 		{
@@ -206,16 +213,16 @@ public class ChatServer implements ClientListener, Runnable
 		{
 			if (!server.start())
 			{
-				System.out.println("Failed to start the server.");
+				System.out.println("Failed to start the server. Press enter to continue");
 			}
 			else
 			{
-				System.out.println("The server has been started.");
+				System.out.println("The server has been started. Press enter to quit.");
 			}
-			while (server.running == true)
-			{
-				Thread.sleep(SERVER_SOCKET_TIMEOUT);
-			}
+
+			Scanner keyboard = new Scanner(System.in);
+			keyboard.nextLine();
+			keyboard.close();
 		}
 		finally
 		{
