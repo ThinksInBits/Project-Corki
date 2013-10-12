@@ -2,6 +2,7 @@ package info.geared.corki.client;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
 
@@ -60,14 +61,14 @@ public class LoginFrame extends JFrame implements ActionListener
 			else
 			{
 				System.out.println("Session opened.");
-				Thread.sleep(5000);
-				System.out.println("Sending messages.");
-				s.send("Hi I'm a banana");
-				Thread.sleep(50);
-				s.send("Ohh boy!");
-				Thread.sleep(50);
-				s.send("WHAT THE FUCKKKK!");
-				Thread.sleep(50);
+				Scanner keyboard = new Scanner(System.in);
+				String message = keyboard.nextLine();
+				while (! message.equals("q") && s.isOpen())
+				{
+					s.send(message);
+					message = keyboard.nextLine();
+				}
+				keyboard.close();
 			}
 		}
 		finally
