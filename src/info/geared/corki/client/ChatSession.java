@@ -176,6 +176,11 @@ public class ChatSession implements Runnable
 	{
 		return status;
 	}
+	
+	public boolean isOpen()
+	{
+		return !isClosed;
+	}
 
 	public void run()
 	{
@@ -201,7 +206,7 @@ public class ChatSession implements Runnable
 					/* When a line is read update the listeners. */
 					if (isClosed == false)
 					{
-						System.out.println(listeners.size() + " listeners");
+						//System.out.println(listeners.size() + " listeners");
 						for(ChatSessionListener listener : listeners)
 						{
 							/* If the listener no longer exists, then remove it. */
@@ -218,7 +223,6 @@ public class ChatSession implements Runnable
 				 */
 				catch(SocketTimeoutException e)
 				{
-					System.out.println("Socket timed out. Read again if the session is still open.");
 					continue;
 				}
 			}
