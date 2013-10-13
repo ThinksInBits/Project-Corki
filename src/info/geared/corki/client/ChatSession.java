@@ -193,7 +193,7 @@ public class ChatSession implements Runnable
 			{
 				if (socket.isClosed())
 				{
-					isClosed = true;					
+					close();					
 					break;
 				}
 				String line;
