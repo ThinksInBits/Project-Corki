@@ -43,7 +43,8 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener
 	protected Image corkiChat;
 
 	LoginFrame()
-	{	
+	{
+		setTitle("Corki Chat - Login");	
 		buildUI();
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		loginButton.requestFocusInWindow();
@@ -79,7 +80,7 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener
 		corkiChatLabel.setLocation(20, 34);
 		getContentPane().add(corkiChatLabel);
 
-		addressField = new HintTextField("Hostname eg: geared.info");
+		addressField = new HintTextField("Server address (geared.info)");
 		addressField.setFont(new Font("SansSerif", Font.PLAIN, 14));
 		addressField.setSize(275, 23);
 		addressField.setLocation(54, 235);
