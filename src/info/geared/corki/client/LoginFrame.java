@@ -23,7 +23,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
-public class LoginFrame extends JFrame implements ActionListener, KeyListener
+public class LoginFrame extends JFrame implements ActionListener, KeyListener, ChatSessionListener
 {
 	private static final long serialVersionUID = 1L;
 
@@ -39,8 +39,12 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener
 	protected JButton loginButton;
 	
 	protected Image icon;
-	protected JLabel corkiChatLabel;
 	protected Image corkiChat;
+	protected ImageIcon loadingIcon;
+	protected JLabel loadingLabel;
+	protected JLabel corkiChatLabel;
+	
+	ChatSession s;
 
 	LoginFrame()
 	{
@@ -57,6 +61,8 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			icon = ImageIO.read(new File("icon.png"));
 			corkiChat = ImageIO.read(new File("corkichat.png"));
+			//loadingIcon = ImageIO.read(new File("loading.gif"));
+			loadingIcon = new ImageIcon(getToolkit().createImage("loading.gif"));
 			setIconImage(icon);
 		}
 		catch(IOException e)
@@ -127,13 +133,19 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener
 		loginButton.setSize(85, 23);
 		loginButton.setLocation(149, 406);
 		loginButton.addActionListener(this);
-		getContentPane().add(loginButton);
+		getContentPane().add(loginButton);	
 		
 		JLabel lblCopyRightGearedinfo = new JLabel("\u00A9 Geared Software 2013. All rights reserved.");
 		lblCopyRightGearedinfo.setHorizontalAlignment(SwingConstants.CENTER);
 		lblCopyRightGearedinfo.setForeground(SystemColor.controlShadow);
 		lblCopyRightGearedinfo.setBounds(20, 440, 350, 14);
 		getContentPane().add(lblCopyRightGearedinfo);
+		
+		loadingLabel = new JLabel(loadingIcon);
+		loadingLabel.setSize(124, 128);
+		loadingLabel.setLocation(134, 337);
+		loadingLabel.setVisible(false);
+		getContentPane().add(loadingLabel);	
 		
 		setVisible(true);
 	}
@@ -157,6 +169,11 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener
 	
 	protected void attemptConnection()
 	{
+		if (loadingLabel.isVisible())
+			return; // If the loading label is visible, we are already attempting a connection.
+		
+		loadingLabel.setVisible(true);
+		
 		/* Reset error messages to hidden. */
 		addressErrorLabel.setVisible(false);;
 		nameErrorLabel.setVisible(false);
@@ -195,22 +212,33 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener
 		}
 		
 		if (error)
+		{
+			loadingLabel.setVisible(false);
 			return;
+		}
 		
 		System.out.println("There were no errors!");
 		System.out.println("host: "+host);
 		System.out.println("username: "+username);
 		System.out.println("password: "+password);
 		
-		ChatSession s = new ChatSession(host, username, password);
+		s = new ChatSession(host, username, password, this);
+	}
+	
+	/* This will be called once the session has finished constructing. */
+	public void update(String msg)
+	{
+		System.out.println("Update called successfully.");
 		try
 		{
-			if (!s.open())
+			if (!s.open()) // This block!!!!!
 			{
+				loadingLabel.setVisible(false);
 				System.out.println("The Chat session could not be opened!");
 			}
 			else
 			{
+				loadingLabel.setVisible(false);
 				System.out.println("Session opened.");
 				Scanner keyboard = new Scanner(System.in);
 				String message = keyboard.nextLine();

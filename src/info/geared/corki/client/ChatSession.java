@@ -17,6 +17,36 @@ import java.util.ArrayList;
 
 public class ChatSession implements Runnable
 {
+	
+	private class ConnectThread implements Runnable
+	{
+
+		public void run()
+		{
+			try
+			{
+				socket = new Socket(hostname, port);
+				socket.setSoTimeout(TIMEOUT);
+			}
+			catch (UnknownHostException e)
+			{
+				//e.printStackTrace();
+				status = Status.UNKNOWN_HOST;
+				connectionListener.update("");
+				return;
+			}
+			catch (IOException e)
+			{
+				//e.printStackTrace();
+				status = Status.IO_EXCEPTION;
+				connectionListener.update("");
+				return;
+			}
+			status = Status.DISCONNECTED;
+			connectionListener.update("");
+		}
+	}
+	
 	public enum Status
 	{
 		DISCONNECTED, CONNECTED, UNKNOWN_HOST, IO_EXCEPTION, NO_MD5, NO_UTF8, NOT_INI, NAME_TAKEN
@@ -31,6 +61,7 @@ public class ChatSession implements Runnable
 	protected byte[] hashedPassword;
 
 	protected ArrayList<ChatSessionListener> listeners;
+	protected ChatSessionListener connectionListener;
 	protected Sender sender;
 	protected PrintStream outStream;
 	protected Socket socket;
@@ -39,12 +70,13 @@ public class ChatSession implements Runnable
 	protected Status status;
 	protected boolean isClosed;
 
-	public ChatSession(String host, String username, String password)
+	public ChatSession(String host, String username, String password, ChatSessionListener connectionListener)
 	{
 		status = Status.NOT_INI;
 		isClosed = true;
 		receivingThread = new Thread(this);
 		listeners = new ArrayList<ChatSessionListener>();
+		this.connectionListener = connectionListener;
 		
 		if (host.contains(":"))
 		{
@@ -68,40 +100,18 @@ public class ChatSession implements Runnable
 		{
 			e.printStackTrace();
 			status = Status.NO_MD5;
+			connectionListener.update("");
 			return; // Return before connected is set to true
 		}
 		catch (UnsupportedEncodingException e)
 		{
 			e.printStackTrace();
 			status = Status.NO_UTF8;
+			connectionListener.update("");
 			return; // Return before connected is set to true
 		}
-
-		try
-		{
-			socket = new Socket(hostname, port);
-			socket.setSoTimeout(TIMEOUT);
-		}
-		catch (UnknownHostException e)
-		{
-			//e.printStackTrace();
-			status = Status.UNKNOWN_HOST;
-			return;
-		}
-		catch (IOException e)
-		{
-			//e.printStackTrace();
-			status = Status.IO_EXCEPTION;
-			return;
-		}
-
-		if (isNameTaken())
-		{
-			status = Status.NAME_TAKEN;
-			return;
-		}
-
-		status = Status.DISCONNECTED;
+		
+		new Thread(new ConnectThread()).start();
 	}
 	
 	public boolean send(String message)
