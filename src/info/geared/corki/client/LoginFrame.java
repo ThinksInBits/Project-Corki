@@ -1,10 +1,14 @@
 package info.geared.corki.client;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Image;
+import java.awt.SystemColor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
@@ -14,30 +18,34 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
-public class LoginFrame extends JFrame implements ActionListener
+public class LoginFrame extends JFrame implements ActionListener, KeyListener
 {
 	private static final long serialVersionUID = 1L;
 
 	/* All JComponents fields here. */
-	protected JTextField nameField;
 	protected JTextField addressField;
-	protected JTextField passwordField;
+	protected JTextField nameField;
+	protected JPasswordField passwordField;
 	
-	protected JLabel nameErrorLabel;
 	protected JLabel addressErrorLabel;
+	protected JLabel nameErrorLabel;
 	protected JLabel passwordErrorLabel;
 	
 	protected JButton loginButton;
 	
 	protected Image icon;
+	protected JLabel corkiChatLabel;
 	protected Image corkiChat;
 
 	LoginFrame()
-	{		
+	{	
 		buildUI();
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		loginButton.requestFocusInWindow();
 	}
 
@@ -63,32 +71,68 @@ public class LoginFrame extends JFrame implements ActionListener
 		
 		getContentPane().setLayout(null);
 		this.setSize(400, 494);
-		
-		getContentPane().add(new ImageIcon(corkiChat));
-		
+		setResizable(false);
+		getContentPane().setBackground(SystemColor.controlHighlight);
+
+		corkiChatLabel = new JLabel(new ImageIcon(corkiChat));
+		corkiChatLabel.setSize(350, 167);
+		corkiChatLabel.setLocation(20, 34);
+		getContentPane().add(corkiChatLabel);
+
 		addressField = new HintTextField("Hostname eg: geared.info");
 		addressField.setFont(new Font("SansSerif", Font.PLAIN, 14));
 		addressField.setSize(275, 23);
-		addressField.setLocation(54, 104);
+		addressField.setLocation(54, 235);
+		addressField.addKeyListener(this);
 		getContentPane().add(addressField);
+		
+		addressErrorLabel = new JLabel("Server Error");
+		addressErrorLabel.setForeground(new Color(128, 0, 0));
+		addressErrorLabel.setVisible(false);
+		addressErrorLabel.setSize(265, 20);
+		addressErrorLabel.setLocation(64, 259);
+		getContentPane().add(addressErrorLabel);
 		
 		nameField = new HintTextField("Username");
 		nameField.setFont(new Font("SansSerif", Font.PLAIN, 14));
 		nameField.setSize(new Dimension(275, 23));
-		nameField.setLocation(54, 199);
+		nameField.setLocation(54, 292);
+		nameField.addKeyListener(this);
 		getContentPane().add(nameField);
 		
-		passwordField = new HintTextField("Password (optional)");
-		passwordField.setFont(new Font("SansSerif", Font.PLAIN, 14));
+		nameErrorLabel = new JLabel("Username Error");
+		nameErrorLabel.setForeground(new Color(128, 0, 0));
+		nameErrorLabel.setVisible(false);
+		nameErrorLabel.setSize(265, 20);
+		nameErrorLabel.setLocation(64, 316);
+		getContentPane().add(nameErrorLabel);
+		
+		passwordField = new PasswordHintField("Password");
+		passwordField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 		passwordField.setSize(275, 23);
-		passwordField.setLocation(54, 294);
+		passwordField.setLocation(54, 349);
+		passwordField.addKeyListener(this);
 		getContentPane().add(passwordField);
+		
+		passwordErrorLabel = new JLabel("Password Error");
+		passwordErrorLabel.setForeground(new Color(128, 0, 0));
+		passwordErrorLabel.setVisible(false);
+		passwordErrorLabel.setSize(265, 20);
+		passwordErrorLabel.setLocation(64, 373);
+		getContentPane().add(passwordErrorLabel);
 		
 		loginButton = new JButton("Login");
 		loginButton.setFont(new Font("SansSerif", Font.PLAIN, 14));
 		loginButton.setSize(85, 23);
-		loginButton.setLocation(149, 389);
+		loginButton.setLocation(149, 406);
+		loginButton.addActionListener(this);
 		getContentPane().add(loginButton);
+		
+		JLabel lblCopyRightGearedinfo = new JLabel("\u00A9 Geared Software 2013. All rights reserved.");
+		lblCopyRightGearedinfo.setHorizontalAlignment(SwingConstants.CENTER);
+		lblCopyRightGearedinfo.setForeground(SystemColor.controlShadow);
+		lblCopyRightGearedinfo.setBounds(20, 440, 350, 14);
+		getContentPane().add(lblCopyRightGearedinfo);
 		
 		setVisible(true);
 	}
@@ -101,26 +145,63 @@ public class LoginFrame extends JFrame implements ActionListener
 	 */
 	public void actionPerformed(ActionEvent e)
 	{
-		// Get data from fields
-
-		ChatSession s = new ChatSession("localhost", "david", "");
-		if (s.getStatus() != ChatSession.Status.DISCONNECTED)
-		{
-			// Session failed
-		}
-		else
-		{
-			ClientFrame client = new ClientFrame(s);
-			s.addChatSessionListener(client);
-			dispose();
-		}
+		attemptConnection();
 	}
-
-	public static void main(String[] args) throws InterruptedException
-	{	
-		LoginFrame lf = new LoginFrame();
-
-		ChatSession s = new ChatSession("localhost:37195", "Vince", "");;
+	
+	public void keyPressed(KeyEvent e)
+	{
+		if (e.getKeyCode() == KeyEvent.VK_ENTER)
+			attemptConnection();
+	}
+	
+	protected void attemptConnection()
+	{
+		/* Reset error messages to hidden. */
+		addressErrorLabel.setVisible(false);;
+		nameErrorLabel.setVisible(false);
+		passwordErrorLabel.setVisible(false);;
+		
+		String host = addressField.getText();
+		String username = nameField.getText();
+		String password = new String(passwordField.getPassword());
+		
+		boolean error = false;
+		
+		if (host.isEmpty())
+		{
+			addressErrorLabel.setText("Please provide a server address.");
+			addressErrorLabel.setVisible(true);
+			error = true;
+		}
+		else if (host.contains(" "))
+		{
+			addressErrorLabel.setText("Server address may not contain spaces.");
+			addressErrorLabel.setVisible(true);
+			error = true;
+		}
+		
+		if (username.isEmpty())
+		{
+			nameErrorLabel.setText("Please provide a username.");
+			nameErrorLabel.setVisible(true);
+			error = true;
+		}
+		else if (username.contains(" "))
+		{
+			nameErrorLabel.setText("Usernames may not contain spaces.");
+			nameErrorLabel.setVisible(true);
+			error = true;
+		}
+		
+		if (error)
+			return;
+		
+		System.out.println("There were no errors!");
+		System.out.println("host: "+host);
+		System.out.println("username: "+username);
+		System.out.println("password: "+password);
+		
+		ChatSession s = new ChatSession(host, username, password);
 		try
 		{
 			if (!s.open())
@@ -146,4 +227,41 @@ public class LoginFrame extends JFrame implements ActionListener
 		}
 	}
 
+	public static void main(String[] args) throws InterruptedException
+	{	
+		LoginFrame lf = new LoginFrame();
+
+		/*ChatSession s = new ChatSession("localhost:37195", "Vince", "");;
+		try
+		{
+			if (!s.open())
+			{
+				System.out.println("The Chat session could not be opened!");
+			}
+			else
+			{
+				System.out.println("Session opened.");
+				Scanner keyboard = new Scanner(System.in);
+				String message = keyboard.nextLine();
+				while (! message.equals("q") && s.isOpen())
+				{
+					s.send(message);
+					message = keyboard.nextLine();
+				}
+				keyboard.close();
+			}
+		}
+		finally
+		{
+			s.close();
+		}*/
+	}
+
+	public void keyReleased(KeyEvent arg0)
+	{	
+	}
+
+	public void keyTyped(KeyEvent arg0)
+	{
+	}
 }
