@@ -4,16 +4,17 @@ import java.awt.Color;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 
+import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
-class HintTextField extends JTextField implements FocusListener
+public class PasswordHintField extends JPasswordField implements FocusListener
 {
 
 	private static final long serialVersionUID = 1L;
 	private final String hint;
 	private boolean showingHint;
 
-	public HintTextField(final String hint)
+	public PasswordHintField(final String hint)
 	{
 		super(hint);
 		this.hint = hint;
@@ -26,7 +27,7 @@ class HintTextField extends JTextField implements FocusListener
 	public void focusGained(FocusEvent e)
 	{
 		this.selectAll();
-		if (this.getText().isEmpty())
+		if (this.getPassword().length == 0)
 		{
 			super.setText("");
 			showingHint = false;
@@ -37,7 +38,7 @@ class HintTextField extends JTextField implements FocusListener
 
 	public void focusLost(FocusEvent e)
 	{
-		if (this.getText().isEmpty())
+		if (this.getPassword().length == 0)
 		{
 			super.setText(hint);
 			showingHint = true;
@@ -46,13 +47,14 @@ class HintTextField extends JTextField implements FocusListener
 		}
 	}
 
-	public String getText()
+	public char[] getPassword()
 	{
 		if (showingHint == true)
-			return "";
+			return new char[0];
 		else
 		{
-			return super.getText();
+			return super.getPassword();
 		}
 	}
+
 }
