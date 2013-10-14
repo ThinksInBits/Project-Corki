@@ -17,12 +17,13 @@ import java.util.ArrayList;
 
 public class ChatSession implements Runnable
 {
-	
+
 	private class ConnectThread implements Runnable
 	{
 
 		public void run()
 		{
+			/* Create the socket. */
 			try
 			{
 				socket = new Socket(hostname, port);
@@ -30,26 +31,50 @@ public class ChatSession implements Runnable
 			}
 			catch (UnknownHostException e)
 			{
-				//e.printStackTrace();
+				// e.printStackTrace();
 				status = Status.UNKNOWN_HOST;
 				connectionListener.update("");
 				return;
 			}
 			catch (IOException e)
 			{
-				//e.printStackTrace();
+				// e.printStackTrace();
 				status = Status.IO_EXCEPTION;
 				connectionListener.update("");
 				return;
 			}
-			status = Status.DISCONNECTED;
-			connectionListener.update("");
+
+			/* Create our output stream for the socket. */
+			try
+			{
+				outStream = new PrintStream(socket.getOutputStream());
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+				status = Status.IO_EXCEPTION;
+				connectionListener.update("");
+				return;
+			}
+
+			/* Start the sender service. */
+			sender = new Sender();
+			sender.start();
+			
+			/* Check if the main receiving thread is already running. */
+			if (!receivingThread.isAlive())
+			{
+				receivingThread.start();
+			}
+
+			/* Try to send connect command to server. */
+			sender.send("CON:" + username, outStream);
 		}
 	}
-	
+
 	public enum Status
 	{
-		DISCONNECTED, CONNECTED, UNKNOWN_HOST, IO_EXCEPTION, NO_MD5, NO_UTF8, NOT_INI, NAME_TAKEN
+		CONNECTED, DISCONNECTED, UNKNOWN_HOST, IO_EXCEPTION, NO_MD5, NO_UTF8, NOT_INI, NAME_TAKEN
 	}
 
 	protected static final int DEFAULT_PORT = 37195;
@@ -68,16 +93,14 @@ public class ChatSession implements Runnable
 	protected Thread receivingThread;
 
 	protected Status status;
-	protected boolean isClosed;
 
-	public ChatSession(String host, String username, String password, ChatSessionListener connectionListener)
+	public ChatSession(String host, String username, String password)
 	{
 		status = Status.NOT_INI;
-		isClosed = true;
 		receivingThread = new Thread(this);
 		listeners = new ArrayList<ChatSessionListener>();
-		this.connectionListener = connectionListener;
-		
+		this.username = username;
+
 		if (host.contains(":"))
 		{
 			hostname = host.split(":")[0];
@@ -88,8 +111,6 @@ public class ChatSession implements Runnable
 			hostname = host;
 			port = DEFAULT_PORT;
 		}
-
-		this.username = username;
 
 		try
 		{
@@ -110,87 +131,57 @@ public class ChatSession implements Runnable
 			connectionListener.update("");
 			return; // Return before connected is set to true
 		}
-		
-		new Thread(new ConnectThread()).start();
 	}
-	
+
 	public boolean send(String message)
 	{
-		return sender.send("MSG:"+message, outStream);
+		return sender.send("MSG:" + message, outStream);
 	}
-	
-	public boolean open()
+
+	public void open(ChatSessionListener connectionListener)
 	{
 		/* Check if the session is already open. */
-		if (isClosed == false)
-			return false;
+		if (status == Status.CONNECTED)
+			return;
+
+		this.connectionListener = connectionListener;
+
+		new Thread(new ConnectThread()).start();
+	}
+
+	public void close()
+	{
+		/* First check if the Session is even open. */
 		
-		/* If the session status is not DISCONNECTED, then the
-		 * session is not ready to be opened. */
-		if (status != Status.DISCONNECTED)
-			return false;
-		
-		/* Check if the main receiving thread is already running. */
-		if (receivingThread.isAlive())
-			return false;
-		else
-		{
-			isClosed = false;
-			receivingThread.start();
-		}
-		
-		/* Create our output stream for the socket. */
+		status = Status.DISCONNECTED;
+		sender.send("DIS:", outStream);
 		try
 		{
-			outStream = new PrintStream(socket.getOutputStream());
+			Thread.sleep(2000);
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
+		}
+		try
+		{
+			socket.close();
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
-			isClosed = true;
-			return false;
 		}
-		
-		/* Start the sender service. */
-		sender = new Sender();
-		sender.start();
-		
-		/* Try to send connect command to server. */
-		if (!sender.send("CON:"+username, outStream))
-		{
-			isClosed = true;
-			return false;
-		}
-		
-		status = Status.CONNECTED;
-		return true;
+		sender.stop();	
 	}
-	
-	public void close()
-	{
-		/* First check if the Session is even open. */
-		if (status == Status.DISCONNECTED || isClosed == true)
-			return;
-		
-		sender.send("DIS:", outStream);
-		isClosed = true;
-		status = Status.DISCONNECTED;
-		sender.stop();
-	}
-	
+
 	public void addChatSessionListener(ChatSessionListener csl)
 	{
 		listeners.add(csl);
 	}
-	
+
 	public Status getStatus()
 	{
 		return status;
-	}
-	
-	public boolean isOpen()
-	{
-		return !isClosed;
 	}
 
 	public void run()
@@ -199,53 +190,73 @@ public class ChatSession implements Runnable
 		try
 		{
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			while (isClosed == false)
+			while (status != Status.DISCONNECTED && !socket.isClosed())
 			{
-				if (socket.isClosed())
-				{
-					close();					
-					break;
-				}
 				String line;
 				try
 				{
 					/* Try to read a line from the socket. */
 					line = in.readLine();
-					
-					System.out.println("RECEIVED: "+line);
-					
-					/* When a line is read update the listeners. */
-					if (isClosed == false)
+
+					if (line == null)
 					{
-						//System.out.println(listeners.size() + " listeners");
-						for(ChatSessionListener listener : listeners)
+						System.out.println("Read line was null.");
+						continue;
+					}
+						
+					/* Check if we received a no-connection-name message
+					 * If so, then we need to tell the connectionListener
+					 * that our name is taken and we should disconnect.
+					 */
+					if (line.startsWith("NCN:"))
+					{
+						status = Status.NAME_TAKEN;
+						connectionListener.update("");
+					}
+					
+					/* Check for confirmation that the client was able to connect. */
+					else if (line.startsWith("CON:"))
+					{
+						if (line.substring(4).equals(username))
 						{
-							/* If the listener no longer exists, then remove it. */
-							if (listener == null)
-							{
-								listeners.remove(listener);
-							}
-							listener.update(line);
+							status = Status.CONNECTED;
+							connectionListener.update("");
 						}
 					}
+					
+					System.out.println(line);
+					
+					/* When a line is read update the listeners. */
+					for (ChatSessionListener listener : listeners)
+					{
+						/* If the listener no longer exists, then remove it. */
+						if (listener == null)
+						{
+							listeners.remove(listener);
+						}
+						listener.update(line);
+					}
 				}
-				/* The read timed out. Check if the session is still open, and try to read
-				 * again if it is.
+				/*
+				 * The read timed out. Check if the session is still open, and
+				 * try to read again if it is.
 				 */
-				catch(SocketTimeoutException e)
+				catch (SocketTimeoutException e)
 				{
 					continue;
 				}
 			}
-			socket.close();
+			
+			if (status == Status.CONNECTED)
+				status = Status.DISCONNECTED;
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
-			isClosed = true;
+			close();
 		}
 	}
-	
+
 	protected synchronized boolean isNameTaken()
 	{
 		return false;

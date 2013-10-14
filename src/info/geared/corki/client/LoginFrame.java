@@ -23,7 +23,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
-public class LoginFrame extends JFrame implements ActionListener, KeyListener, ChatSessionListener
+public class LoginFrame extends JFrame implements ActionListener, KeyListener, ChatSessionListener, Runnable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -217,41 +217,53 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener, C
 			return;
 		}
 		
-		System.out.println("There were no errors!");
-		System.out.println("host: "+host);
-		System.out.println("username: "+username);
-		System.out.println("password: "+password);
-		
-		s = new ChatSession(host, username, password, this);
+		s = new ChatSession(host, username, password);
+		s.open(this);
 	}
 	
 	/* This will be called once the session has finished constructing. */
 	public void update(String msg)
 	{
-		System.out.println("Update called successfully.");
-		try
+		if (s.status == ChatSession.Status.CONNECTED)
 		{
-			if (!s.open()) // This block!!!!!
-			{
-				loadingLabel.setVisible(false);
-				System.out.println("The Chat session could not be opened!");
-			}
-			else
-			{
-				loadingLabel.setVisible(false);
-				System.out.println("Session opened.");
-				Scanner keyboard = new Scanner(System.in);
-				String message = keyboard.nextLine();
-				while (! message.equals("q") && s.isOpen())
-				{
-					s.send(message);
-					message = keyboard.nextLine();
-				}
-				keyboard.close();
-			}
+			System.out.println("Session opened!");
+			loadingLabel.setVisible(false);
+			(new Thread(this)).start();
 		}
-		finally
+		else if (s.status == ChatSession.Status.UNKNOWN_HOST)
 		{
+			addressErrorLabel.setText("Could not resolve the IP of the host.");
+			addressErrorLabel.setVisible(true);
+			addressField.requestFocusInWindow();
+			
+			loadingLabel.setVisible(false);
+			s.close();
+		}
+		else if (s.status == ChatSession.Status.IO_EXCEPTION)
+		{
+			addressErrorLabel.setText("Could not connect to server.");
+			addressErrorLabel.setVisible(true);
+			addressField.requestFocusInWindow();
+			
+			loadingLabel.setVisible(false);
+			s.close();
+		}
+		else if (s.status == ChatSession.Status.NAME_TAKEN)
+		{
+			nameErrorLabel.setText("That username is taken.");
+			nameErrorLabel.setVisible(true);
+			nameField.requestFocusInWindow();
+			
+			loadingLabel.setVisible(false);
+			s.close();
+		}
+		else
+		{
+			addressErrorLabel.setText("Unknown error!");
+			addressErrorLabel.setVisible(true);
+			addressField.requestFocusInWindow();
+			
+			loadingLabel.setVisible(false);
 			s.close();
 		}
 	}
@@ -292,5 +304,19 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener, C
 
 	public void keyTyped(KeyEvent arg0)
 	{
+	}
+
+	public void run()
+	{
+		Scanner keyboard = new Scanner(System.in);
+		String message = keyboard.nextLine();
+		while (! message.equals("q"))
+		{
+			s.send(message);
+			message = keyboard.nextLine();
+		}
+		keyboard.close();
+		s.close();
+		dispose();
 	}
 }
