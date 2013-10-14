@@ -28,6 +28,7 @@ public class ChatSession implements Runnable
 			{
 				socket = new Socket(hostname, port);
 				socket.setSoTimeout(TIMEOUT);
+				socket.setKeepAlive(true);
 			}
 			catch (UnknownHostException e)
 			{
@@ -258,19 +259,5 @@ public class ChatSession implements Runnable
 			e.printStackTrace();
 			close();
 		}
-	}
-
-	protected synchronized boolean isNameTaken()
-	{
-		return false;
-	}
-
-	protected synchronized boolean connect()
-	{
-		return false;
-	}
-
-	protected synchronized void disconnect()
-	{
 	}
 }

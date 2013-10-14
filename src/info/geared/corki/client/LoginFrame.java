@@ -59,10 +59,10 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener, C
 		try
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-			icon = ImageIO.read(new File("icon.png"));
-			corkiChat = ImageIO.read(new File("corkichat.png"));
+			icon = ImageIO.read(new File("res/icon.png"));
+			corkiChat = ImageIO.read(new File("res/corkichat.png"));
 			//loadingIcon = ImageIO.read(new File("loading.gif"));
-			loadingIcon = new ImageIcon(getToolkit().createImage("loading.gif"));
+			loadingIcon = new ImageIcon(getToolkit().createImage("res/loading.gif"));
 			setIconImage(icon);
 		}
 		catch(IOException e)
@@ -77,7 +77,8 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener, C
 		}
 		
 		getContentPane().setLayout(null);
-		this.setSize(400, 494);
+		setSize(400, 494);
+		setLocationRelativeTo(null);
 		setResizable(false);
 		getContentPane().setBackground(SystemColor.controlHighlight);
 
@@ -228,7 +229,10 @@ public class LoginFrame extends JFrame implements ActionListener, KeyListener, C
 		{
 			System.out.println("Session opened!");
 			loadingLabel.setVisible(false);
-			(new Thread(this)).start();
+			//(new Thread(this)).start();
+			
+			new ClientFrame(s);
+			this.dispose();
 		}
 		else if (s.status == ChatSession.Status.UNKNOWN_HOST)
 		{
