@@ -154,7 +154,8 @@ public class ChatSession implements Runnable
 		/* First check if the Session is even open. */
 		
 		status = Status.DISCONNECTED;
-		sender.send("DIS:", outStream);
+		if (sender != null)
+			sender.send("DIS:", outStream);
 		try
 		{
 			Thread.sleep(2000);
@@ -165,13 +166,15 @@ public class ChatSession implements Runnable
 		}
 		try
 		{
-			socket.close();
+			if (socket != null)
+				socket.close();
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
 		}
-		sender.stop();	
+		if (sender != null)
+			sender.stop();	
 	}
 
 	public void addChatSessionListener(ChatSessionListener csl)

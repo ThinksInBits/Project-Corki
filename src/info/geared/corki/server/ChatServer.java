@@ -191,7 +191,7 @@ public class ChatServer implements ClientListener, Runnable
 			{
 				if (c.getName().equals(name))
 				{
-					c.send("NCN:", sender);
+					client.send("NCN:", sender);
 					return;
 				}
 			}
