@@ -36,7 +36,8 @@ public class Client
 				try
 				{
 					line = in.readLine();
-					listener.receiveMessage(line, client);
+					if (line != null)
+						listener.receiveMessage(line, client);
 				}
 				catch (SocketTimeoutException e)
 				{

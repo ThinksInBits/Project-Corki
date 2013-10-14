@@ -186,9 +186,18 @@ public class ChatServer implements ClientListener, Runnable
 
 		if (message.startsWith("CON:"))
 		{
+			String name = message.substring(4);
+			for (Client c : clients)
+			{
+				if (c.getName().equals(name))
+				{
+					c.send("NCN:", sender);
+					return;
+				}
+			}
 			client.setName(message.substring(4));
 			System.out.println(client.getName() + " connected.");
-			broadcast(client.getName() + " connected.");
+			broadcast(message);
 		}
 		else if (message.startsWith("MSG:"))
 		{
