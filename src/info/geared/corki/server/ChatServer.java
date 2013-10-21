@@ -178,6 +178,18 @@ public class ChatServer implements ClientListener, Runnable
 				c.send(message, sender);
 		}
 	}
+	
+	protected String generateUserList()
+	{
+		String uList = "";
+		for (int i = 0; i < clients.size(); i++)
+		{
+			uList += clients.get(i).getName();
+			if (i+1 < clients.size())
+				uList += "|";
+		}
+		return uList;
+	}
 
 	public void receiveMessage(String message, Client client)
 	{
@@ -198,6 +210,7 @@ public class ChatServer implements ClientListener, Runnable
 			client.setName(message.substring(4));
 			System.out.println(client.getName() + " connected.");
 			broadcast(message);
+			broadcast("CUL:"+generateUserList());
 		}
 		else if (message.startsWith("MSG:"))
 		{
@@ -215,14 +228,7 @@ public class ChatServer implements ClientListener, Runnable
 		}
 		else if (message.startsWith("RUL:"))
 		{
-			String uList = "";
-			for (int i = 0; i < clients.size(); i++)
-			{
-				uList += clients.get(i).getName();
-				if (i+1 < clients.size())
-					uList += "|";
-			}
-			client.send("CUL:"+uList, sender);
+			client.send("CUL:"+generateUserList(), sender);
 		}
 	}
 

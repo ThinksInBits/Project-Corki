@@ -99,12 +99,15 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 		if (msg.startsWith("CUL:"))
 		{
 			String[] users = msg.substring(4).split("\\|");
+			userListPanel.removeAll();
+			userLabels.clear();
 			for (int i = 0; i < users.length; i++)
 			{
 				JLabel l = new JLabel(users[i]);
 				userLabels.add(l);
 				l.setBorder(new EmptyBorder(3,3,3,5));
 				userListPanel.add(l);
+				userListPanel.invalidate();
 			}
 		}
 		else
