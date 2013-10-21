@@ -6,15 +6,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
 
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
-import javax.swing.JButton;
 
 public class ClientFrame extends JFrame implements ChatSessionListener, KeyListener, ActionListener
 {
@@ -23,6 +24,7 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 	
 	protected ChatSession session;
 	protected JPanel userListPanel;
+	protected ArrayList<JLabel> userLabels;
 	protected JTextArea messageHistory;
 	protected JTextField messageTextField;
 	protected JButton sendButton;
@@ -34,6 +36,7 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 
 	ClientFrame(ChatSession session)
 	{
+		userLabels = new ArrayList<JLabel>();
 		this.session = session;
 		session.addChatSessionListener(this);
 		
@@ -58,13 +61,9 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 		getContentPane().add(userListPanel, BorderLayout.EAST);
 		userListPanel.setLayout(new BoxLayout(userListPanel, BoxLayout.Y_AXIS));
 		
-		JLabel label = new JLabel("New label");
-		label.setBorder(new EmptyBorder(3,3,3,5));
-		userListPanel.add(label);
-		
-		JLabel lblNewLabel = new JLabel("New label");
-		lblNewLabel.setBorder(new EmptyBorder(3,3,3,5));
-		userListPanel.add(lblNewLabel);
+		JLabel l = new JLabel("Users");
+		l.setBorder(new EmptyBorder(3,3,3,5));
+		userListPanel.add(l);
 		
 		messagePanel = new JPanel();
 		getContentPane().add(messagePanel, BorderLayout.SOUTH);
@@ -99,10 +98,13 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 	{
 		if (msg.startsWith("CUL:"))
 		{
-			String[] users = msg.substring(4).split("|");
+			String[] users = msg.substring(4).split("\\|");
 			for (int i = 0; i < users.length; i++)
 			{
-				System.out.println(users[i]);
+				JLabel l = new JLabel(users[i]);
+				userLabels.add(l);
+				l.setBorder(new EmptyBorder(3,3,3,5));
+				userListPanel.add(l);
 			}
 		}
 		else
