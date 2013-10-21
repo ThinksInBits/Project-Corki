@@ -97,7 +97,18 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 	 */
 	public void update(String msg)
 	{
-		messageHistory.append(msg + "\r\n");
+		if (msg.startsWith("CUL:"))
+		{
+			String[] users = msg.substring(4).split("|");
+			for (int i = 0; i < users.length; i++)
+			{
+				System.out.println(users[i]);
+			}
+		}
+		else
+		{
+			messageHistory.append(msg + "\r\n");
+		}
 	}
 
 	/** This method listens for the user to click the send button.

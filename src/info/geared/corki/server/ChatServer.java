@@ -213,6 +213,17 @@ public class ChatServer implements ClientListener, Runnable
 			client.stop();
 			broadcast(client.getName() + " disconnected.");
 		}
+		else if (message.startsWith("RUL:"))
+		{
+			String uList = "";
+			for (int i = 0; i < clients.size(); i++)
+			{
+				uList += clients.get(i).getName();
+				if (i+1 < clients.size())
+					uList += "|";
+			}
+			client.send("CUL:"+uList, sender);
+		}
 	}
 
 	public static void main(String args[]) throws InterruptedException

@@ -85,6 +85,7 @@ public class ChatSession implements Runnable
 	protected String username;
 	protected int port;
 	protected byte[] hashedPassword;
+	protected String userList;
 
 	protected ArrayList<ChatSessionListener> listeners;
 	protected ChatSessionListener connectionListener;
@@ -225,6 +226,7 @@ public class ChatSession implements Runnable
 						{
 							status = Status.CONNECTED;
 							connectionListener.update("");
+							sender.send("RUL:", outStream);
 						}
 					}
 					
