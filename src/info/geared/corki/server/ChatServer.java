@@ -210,7 +210,6 @@ public class ChatServer implements ClientListener, Runnable
 			client.setName(message.substring(4));
 			System.out.println(client.getName() + " connected.");
 			broadcast(message);
-			broadcast("CUL:"+generateUserList());
 		}
 		else if (message.startsWith("MSG:"))
 		{
@@ -224,7 +223,7 @@ public class ChatServer implements ClientListener, Runnable
 			System.out.println(client.getName() + " disconnected.");
 			clients.remove(client);
 			client.stop();
-			broadcast(client.getName() + " disconnected.");
+			broadcast("DIS:"+client.getName());
 		}
 		else if (message.startsWith("RUL:"))
 		{

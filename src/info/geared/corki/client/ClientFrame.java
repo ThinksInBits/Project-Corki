@@ -1,6 +1,7 @@
 package info.geared.corki.client;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,9 +14,13 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+import java.awt.Component;
+import javax.swing.JScrollPane;
 
 public class ClientFrame extends JFrame implements ChatSessionListener, KeyListener, ActionListener
 {
@@ -24,11 +29,13 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 	
 	protected ChatSession session;
 	protected JPanel userListPanel;
-	protected ArrayList<JLabel> userLabels;
+	protected ArrayList<UserLabel> userLabels;
 	protected JTextArea messageHistory;
 	protected JTextField messageTextField;
 	protected JButton sendButton;
 	protected JPanel messagePanel;
+	protected JLabel userLabel;
+	private JScrollPane scrollPane;
 	
 	/* All JComponents fields here. */
 	
@@ -36,7 +43,7 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 
 	ClientFrame(ChatSession session)
 	{
-		userLabels = new ArrayList<JLabel>();
+		userLabels = new ArrayList<UserLabel>();
 		this.session = session;
 		session.addChatSessionListener(this);
 		
@@ -54,16 +61,31 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 		setSize(475, 600);
 		getContentPane().setLayout(new BorderLayout(2, 2));
 		
+		
 		messageHistory = new JTextArea();
-		getContentPane().add(messageHistory, BorderLayout.CENTER);
+		messageHistory.setEditable(false);
+		scrollPane = new JScrollPane(messageHistory);
+		getContentPane().add(scrollPane, BorderLayout.CENTER);
 		
 		userListPanel = new JPanel();
+		userListPanel.setPreferredSize(new Dimension(90, 10));
 		getContentPane().add(userListPanel, BorderLayout.EAST);
 		userListPanel.setLayout(new BoxLayout(userListPanel, BoxLayout.Y_AXIS));
 		
-		JLabel l = new JLabel("Users");
-		l.setBorder(new EmptyBorder(3,3,3,5));
-		userListPanel.add(l);
+		userLabel = new JLabel("Users");
+		userLabel.setPreferredSize(new Dimension(90, 20));
+		userLabel.setVerticalTextPosition(SwingConstants.TOP);
+		userLabel.setMaximumSize(new Dimension(90, 20));
+		userLabel.setMinimumSize(new Dimension(90, 20));
+		userLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+		userLabel.setVerticalAlignment(SwingConstants.TOP);
+		userLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		userLabel.setBorder(new EmptyBorder(3,3,3,5));
+		userListPanel.add(userLabel);
+		JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
+		separator.setMaximumSize(new Dimension(32767, 2));
+		separator.setAlignmentY(Component.TOP_ALIGNMENT);
+		userListPanel.add(separator);
 		
 		messagePanel = new JPanel();
 		getContentPane().add(messagePanel, BorderLayout.SOUTH);
@@ -79,6 +101,8 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 		sendButton.setFont(new Font("SansSerif", Font.PLAIN, 13));
 		messagePanel.add(sendButton);
 		
+		
+		
 		setVisible(true);
 	}
 	
@@ -88,6 +112,12 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 			session.send(messageTextField.getText());
 		
 		messageTextField.setText("");
+	}
+	
+	protected void console(String s)
+	{
+		messageHistory.append(s + "\r\n");
+		messageHistory.setCaretPosition(messageHistory.getText().length());
 	}
 
 	/** This method is called by the session when there is a new chat
@@ -99,20 +129,69 @@ public class ClientFrame extends JFrame implements ChatSessionListener, KeyListe
 		if (msg.startsWith("CUL:"))
 		{
 			String[] users = msg.substring(4).split("\\|");
+			
 			userListPanel.removeAll();
+			
+			userListPanel.add(userLabel);
+			JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
+			separator.setMaximumSize(new Dimension(32767, 2));
+			separator.setAlignmentY(Component.TOP_ALIGNMENT);
+			userListPanel.add(separator);
 			userLabels.clear();
+			
 			for (int i = 0; i < users.length; i++)
 			{
-				JLabel l = new JLabel(users[i]);
+				UserLabel l = new UserLabel(users[i]);
 				userLabels.add(l);
 				l.setBorder(new EmptyBorder(3,3,3,5));
+				l.setAlignmentY(Component.TOP_ALIGNMENT);
 				userListPanel.add(l);
-				userListPanel.invalidate();
 			}
+			userListPanel.repaint();
+			validate();
+		}
+		else if (msg.startsWith("CON:"))
+		{
+			UserLabel l = new UserLabel(msg.substring(4));
+			if (userLabels.contains(l))
+			{
+				l = null;
+				return;
+			}
+			else
+			{
+				l.setBorder(new EmptyBorder(3,3,3,5));
+				l.setAlignmentY(Component.TOP_ALIGNMENT);
+				userLabels.add(l);
+				userListPanel.add(l);
+				userListPanel.repaint();
+				validate();
+				console(l.getText() + " has connected.");
+			}
+		}
+		else if (msg.startsWith("DIS:"))
+		{
+			String name = msg.substring(4);
+			for (UserLabel l : userLabels)
+			{
+				if (l.getText().equals(name))
+				{
+					userListPanel.remove(l);
+					userLabels.remove(l);
+					userListPanel.repaint();
+					validate();
+					console(name + " has disconnected.");
+					break;
+				}
+			}
+		}
+		else if (msg.startsWith("MSG:"))
+		{
+			console(msg.substring(4));
 		}
 		else
 		{
-			messageHistory.append(msg + "\r\n");
+			console(msg);
 		}
 	}
 
